@@ -20,7 +20,7 @@ def create_tables():
     connection = get_db_connection()
     try:
         with connection.cursor() as cursor:
-            # Users table
+            # Users table for my Userhtml page
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS users (
                     id INT AUTO_INCREMENT PRIMARY KEY,

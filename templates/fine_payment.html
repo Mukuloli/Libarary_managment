@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Fine Payment{% endblock %}
+{% block content %}
+<h2 class="text-center">Fine Payment</h2>
+<p>No fine due. Thank you!</p>
+<a href="{{ url_for('user_dashboard') }}" class="btn btn-success">Back to Dashboard</a>
+{% endblock %}

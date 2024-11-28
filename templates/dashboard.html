@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<h2 class="text-center">{{ role.capitalize() }} Dashboard</h2>
+{% if role == 'admin' %}
+    <a href="{{ url_for('add_book') }}" class="btn btn-success">Add New Book</a>
+{% else %}
+    <a href="{{ url_for('issue_book') }}" class="btn btn-primary">Issue Book</a>
+    <a href="{{ url_for('return_book') }}" class="btn btn-warning">Return Book</a>
+{% endif %}
+{% endblock %}

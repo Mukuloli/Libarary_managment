@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Issue Book{% endblock %}
+{% block content %}
+<h2 class="text-center">Issue Book</h2>
+<form method="POST" action="{{ url_for('issue_book') }}">
+    <div class="mb-3">
+        <label for="book_id" class="form-label">Book ID</label>
+        <input type="text" class="form-control" id="book_id" name="book_id" required>
+    </div>
+    <div class="mb-3">
+        <label for="user_id" class="form-label">User ID</label>
+        <input type="text" class="form-control" id="user_id" name="user_id" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Issue Book</button>
+</form>
+{% endblock %}

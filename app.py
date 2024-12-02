@@ -5,7 +5,7 @@ import pymysql
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
-app.secret_key = "supersecretkey"  # Replace with your own secret key
+app.secret_key = "supersecretkey"  
 
 # Database connection
 def get_db_connection():
@@ -64,15 +64,15 @@ def create_tables():
                 );
             """)
 
-            # Membership table
+            
+            
             cursor.execute("""
-                CREATE TABLE IF NOT EXISTS memberships (
+                CREATE TABLE IF NOT EXISTS return_books (
                     id INT AUTO_INCREMENT PRIMARY KEY,
-                    user_id INT NOT NULL,
-                    start_date DATE NOT NULL,
-                    end_date DATE NOT NULL,
-                    type ENUM('6 months', '1 year', '2 years') DEFAULT '6 months',
-                    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+                    issue_id INT NOT NULL,
+                    return_date DATE NOT NULL,
+                    fine_amount DECIMAL(10, 2) DEFAULT 0.00,
+                    FOREIGN KEY (issue_id) REFERENCES issued_books (id) ON DELETE CASCADE
                 );
             """)
 
@@ -200,21 +200,63 @@ def issue_book():
         return redirect(url_for('user_dashboard'))
 
     return render_template('issue_book.html')
-
-# Return Book
-@app.route('/return_book', methods=['POST'])
+@app.route('/return_book', methods=['GET', 'POST'])
 def return_book():
-    book_id = request.form['book_id']
-    serial_no = request.form['serial_no']
+    if request.method == 'POST':
+        book_id = request.form['book_id']
+        user_id = session.get('user_id')
 
-    if not book_id or not serial_no:
-        flash('Book ID and Serial No. are required.', 'danger')
+        if not book_id:
+            flash('Book ID is required.', 'danger')
+            return redirect(url_for('user_dashboard'))
+
+        connection = get_db_connection()
+        try:
+            with connection.cursor() as cursor:
+                
+                cursor.execute("""
+                    SELECT id, return_date 
+                    FROM issued_books 
+                    WHERE book_id = %s AND user_id = %s
+                """, (book_id, user_id))
+                issued_book = cursor.fetchone()
+
+                if not issued_book:
+                    flash('No matching issued book found.', 'danger')
+                    return redirect(url_for('user_dashboard'))
+
+                
+                today = datetime.now().date()
+                fine_amount = 0.00
+                if today > issued_book['return_date']:
+                    overdue_days = (today - issued_book['return_date']).days
+                    fine_amount = overdue_days * 2  
+
+                
+                cursor.execute("""
+                    INSERT INTO return_books (issue_id, return_date, fine_amount) 
+                    VALUES (%s, %s, %s)
+                """, (issued_book['id'], today, fine_amount))
+
+                
+                cursor.execute("UPDATE books SET available = TRUE WHERE id = %s", (book_id,))
+
+            connection.commit()
+
+            if fine_amount > 0:
+                flash(f'Book returned successfully! Fine incurred: ${fine_amount:.2f}', 'warning')
+            else:
+                flash('Book returned successfully!', 'success')
+        except Exception as e:
+            connection.rollback()
+            flash(f'Error returning book: {e}', 'danger')
+        finally:
+            connection.close()
+
         return redirect(url_for('user_dashboard'))
 
-    # Logic for calculating fines (if needed)
+    return render_template('return_book.html')
 
-    flash('Book returned successfully!', 'success')
-    return redirect(url_for('user_dashboard'))
 
 if __name__ == '__main__':
     app.run(debug=True)
